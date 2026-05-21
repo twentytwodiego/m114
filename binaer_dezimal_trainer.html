@@ -1,0 +1,229 @@
+
+<style>
+  .trainer { padding: 1.5rem 0; max-width: 560px; margin: 0 auto; }
+  .score-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.75rem 1rem; text-align: center; }
+  .metric-label { font-size: 12px; color: var(--color-text-secondary); margin: 0 0 4px; }
+  .metric-value { font-size: 22px; font-weight: 500; color: var(--color-text-primary); margin: 0; }
+  .card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.5rem; margin-bottom: 1rem; }
+  .mode-row { display: flex; gap: 8px; margin-bottom: 1.25rem; }
+  .mode-btn { flex: 1; padding: 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-secondary); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .mode-btn.active { background: var(--color-background-info); color: var(--color-text-info); border-color: transparent; font-weight: 500; }
+  .question-label { font-size: 13px; color: var(--color-text-secondary); margin: 0 0 8px; }
+  .question-value { font-size: 32px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 1.25rem; letter-spacing: 0.04em; font-family: var(--font-mono); }
+  .bit-grid { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .bit-btn { width: 52px; height: 52px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-secondary); color: var(--color-text-primary); font-size: 20px; font-weight: 500; cursor: pointer; transition: all 0.15s; font-family: var(--font-mono); }
+  .bit-btn.on { background: var(--color-background-info); color: var(--color-text-info); border-color: transparent; }
+  .bit-label { font-size: 11px; color: var(--color-text-secondary); text-align: center; margin-top: 2px; }
+  .bit-col { display: flex; flex-direction: column; align-items: center; }
+  .input-row { display: flex; gap: 10px; align-items: center; }
+  .answer-input { flex: 1; height: 44px; font-size: 18px; font-family: var(--font-mono); text-align: center; }
+  .check-btn { padding: 0 24px; height: 44px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-primary); font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+  .check-btn:hover { background: var(--color-background-secondary); }
+  .feedback { border-radius: var(--border-radius-md); padding: 12px 16px; font-size: 14px; margin-top: 1rem; display: none; }
+  .feedback.correct { background: var(--color-background-success); color: var(--color-text-success); border: 0.5px solid var(--color-border-success); }
+  .feedback.wrong { background: var(--color-background-danger); color: var(--color-text-danger); border: 0.5px solid var(--color-border-danger); }
+  .next-btn { width: 100%; margin-top: 1rem; padding: 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-primary); font-size: 14px; font-weight: 500; cursor: pointer; display: none; }
+  .next-btn:hover { background: var(--color-background-secondary); }
+  .bits-display { font-size: 28px; font-weight: 500; font-family: var(--font-mono); letter-spacing: 0.15em; color: var(--color-text-primary); margin: 0 0 1.25rem; }
+  .hint-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .hint-text { font-size: 12px; color: var(--color-text-tertiary); }
+  .difficulty-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .diff-btn { flex: 1; padding: 6px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-secondary); font-size: 12px; cursor: pointer; }
+  .diff-btn.active { background: var(--color-background-warning); color: var(--color-text-warning); border-color: transparent; font-weight: 500; }
+</style>
+
+<div class="trainer">
+  <h2 class="sr-only">Binär-Dezimal Trainingsrechner</h2>
+
+  <div class="score-row">
+    <div class="metric"><p class="metric-label">Richtig</p><p class="metric-value" id="correct">0</p></div>
+    <div class="metric"><p class="metric-label">Falsch</p><p class="metric-value" id="wrong">0</p></div>
+    <div class="metric"><p class="metric-label">Serie</p><p class="metric-value" id="streak">0 🔥</p></div>
+  </div>
+
+  <div class="card">
+    <div class="mode-row">
+      <button class="mode-btn active" id="btn-b2d" onclick="setMode('b2d')">Binär → Dezimal</button>
+      <button class="mode-btn" id="btn-d2b" onclick="setMode('d2b')">Dezimal → Binär</button>
+    </div>
+
+    <div class="difficulty-row">
+      <button class="diff-btn active" id="diff-4" onclick="setDiff(4)">4-bit (0–15)</button>
+      <button class="diff-btn" id="diff-6" onclick="setDiff(6)">6-bit (0–63)</button>
+      <button class="diff-btn" id="diff-8" onclick="setDiff(8)">8-bit (0–255)</button>
+    </div>
+
+    <div id="question-area">
+      <p class="question-label" id="q-label">Welche Dezimalzahl entspricht dieser Binärzahl?</p>
+
+      <div id="binary-show">
+        <div class="hint-row"><span class="hint-text" id="pos-hint"></span></div>
+        <p class="bits-display" id="bits-display"></p>
+      </div>
+
+      <div id="decimal-show" style="display:none">
+        <p class="question-value" id="decimal-display"></p>
+      </div>
+
+      <div id="answer-area">
+        <div id="input-answer">
+          <div class="input-row">
+            <input class="answer-input" type="number" id="answer-input" placeholder="Dezimalzahl eingeben..." min="0" />
+            <button class="check-btn" onclick="checkAnswer()">Prüfen</button>
+          </div>
+        </div>
+
+        <div id="bit-answer" style="display:none">
+          <div class="bit-grid" id="bit-grid"></div>
+          <p style="font-size:13px; color:var(--color-text-secondary); margin:0 0 12px;">Deine Antwort: <span id="bit-result" style="font-family:var(--font-mono); font-weight:500;">00000000</span> = <span id="bit-decimal">0</span></p>
+          <button class="check-btn" style="width:100%" onclick="checkAnswer()">Prüfen</button>
+        </div>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+      <button class="next-btn" id="next-btn" onclick="nextQuestion()">Nächste Aufgabe →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let mode = 'b2d';
+let bits = 4;
+let correct = 0, wrong = 0, streak = 0;
+let currentAnswer = 0;
+let bitValues = [];
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-b2d').classList.toggle('active', m === 'b2d');
+  document.getElementById('btn-d2b').classList.toggle('active', m === 'd2b');
+  nextQuestion();
+}
+
+function setDiff(b) {
+  bits = b;
+  [4,6,8].forEach(d => document.getElementById('diff-'+d).classList.toggle('active', d === b));
+  nextQuestion();
+}
+
+function rand(max) { return Math.floor(Math.random() * (max + 1)); }
+
+function toBinary(n, len) {
+  return n.toString(2).padStart(len, '0');
+}
+
+function buildBitGrid() {
+  const grid = document.getElementById('bit-grid');
+  grid.innerHTML = '';
+  bitValues = new Array(bits).fill(0);
+  for (let i = 0; i < bits; i++) {
+    const pos = bits - 1 - i;
+    const col = document.createElement('div');
+    col.className = 'bit-col';
+    const btn = document.createElement('button');
+    btn.className = 'bit-btn';
+    btn.textContent = '0';
+    btn.dataset.pos = pos;
+    btn.onclick = () => toggleBit(btn, pos);
+    const lbl = document.createElement('div');
+    lbl.className = 'bit-label';
+    lbl.textContent = Math.pow(2, pos);
+    col.appendChild(btn);
+    col.appendChild(lbl);
+    grid.appendChild(col);
+  }
+  updateBitResult();
+}
+
+function toggleBit(btn, pos) {
+  bitValues[pos] = bitValues[pos] === 0 ? 1 : 0;
+  btn.textContent = bitValues[pos];
+  btn.classList.toggle('on', bitValues[pos] === 1);
+  updateBitResult();
+}
+
+function updateBitResult() {
+  let val = 0;
+  for (let i = 0; i < bits; i++) val += bitValues[i] * Math.pow(2, i);
+  const binStr = bitValues.slice().reverse().join('');
+  document.getElementById('bit-result').textContent = binStr;
+  document.getElementById('bit-decimal').textContent = val;
+}
+
+function nextQuestion() {
+  const max = Math.pow(2, bits) - 1;
+  currentAnswer = rand(max);
+
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+
+  if (mode === 'b2d') {
+    document.getElementById('q-label').textContent = 'Welche Dezimalzahl entspricht dieser Binärzahl?';
+    document.getElementById('binary-show').style.display = 'block';
+    document.getElementById('decimal-show').style.display = 'none';
+    document.getElementById('input-answer').style.display = 'block';
+    document.getElementById('bit-answer').style.display = 'none';
+
+    const bin = toBinary(currentAnswer, bits);
+    document.getElementById('bits-display').textContent = bin;
+
+    const hints = [];
+    for (let i = 0; i < bits; i++) {
+      if (bin[i] === '1') hints.push(`2^${bits-1-i}=${Math.pow(2,bits-1-i)}`);
+    }
+    document.getElementById('pos-hint').textContent = hints.length ? 'Positionen: ' + hints.join(' + ') : '';
+
+    const inp = document.getElementById('answer-input');
+    inp.value = '';
+    inp.disabled = false;
+    inp.focus();
+  } else {
+    document.getElementById('q-label').textContent = 'Welche Binärzahl entspricht dieser Dezimalzahl?';
+    document.getElementById('binary-show').style.display = 'none';
+    document.getElementById('decimal-show').style.display = 'block';
+    document.getElementById('input-answer').style.display = 'none';
+    document.getElementById('bit-answer').style.display = 'block';
+    document.getElementById('decimal-display').textContent = currentAnswer;
+    buildBitGrid();
+  }
+}
+
+function checkAnswer() {
+  let userAnswer;
+  if (mode === 'b2d') {
+    userAnswer = parseInt(document.getElementById('answer-input').value);
+    document.getElementById('answer-input').disabled = true;
+  } else {
+    let val = 0;
+    for (let i = 0; i < bits; i++) val += bitValues[i] * Math.pow(2, i);
+    userAnswer = val;
+  }
+
+  const fb = document.getElementById('feedback');
+  fb.style.display = 'block';
+
+  if (userAnswer === currentAnswer) {
+    correct++;
+    streak++;
+    fb.className = 'feedback correct';
+    fb.textContent = `✓ Richtig! ${currentAnswer} = ${toBinary(currentAnswer, bits)}`;
+  } else {
+    wrong++;
+    streak = 0;
+    fb.className = 'feedback wrong';
+    fb.textContent = `✗ Falsch. Die richtige Antwort: ${currentAnswer} = ${toBinary(currentAnswer, bits)}`;
+  }
+
+  document.getElementById('correct').textContent = correct;
+  document.getElementById('wrong').textContent = wrong;
+  document.getElementById('streak').textContent = streak + (streak >= 3 ? ' 🔥' : '');
+  document.getElementById('next-btn').style.display = 'block';
+}
+
+document.getElementById('answer-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkAnswer();
+});
+
+nextQuestion();
+</script>
