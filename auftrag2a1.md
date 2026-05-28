@@ -166,3 +166,86 @@ b. signed
 kleinste = 1000'0000
 grösste = 0111'1111
 -128 - +127
+
+## Aufgabe 15
+
+### Problem mit Ganzzahlen
+
+Ganzzahl-Division: `1 ÷ 3 × 3 = 0` (falsch!)
+→ Das Zwischenresultat `0.333...` wird als `0` gespeichert.
+
+### Mein Vorschlag: Eigenes Floating-Point-Format
+
+Angelehnt an den **IEEE 754 Standard** (wie echte CPUs es machen):
+
+#### Aufbau (32-Bit Beispiel)
+
+| Feld | Bits | Bedeutung |
+|------|------|-----------|
+| **S** (Vorzeichen) | 1 | 0 = positiv, 1 = negativ |
+| **E** (Exponent) | 8 | Grösse der Zahl (Bias: +127) |
+| **M** (Mantisse) | 23 | Die eigentlichen Ziffern |
+| S | EEEEEEEE | MMMMMMMMMMMMMMMMMMMMMMM |
+  1      8                 23
+
+
+#### Formel
+
+Wert = (-1)^S × 1.Mantisse × 2^(Exponent - 127)
+
+
+#### Beispiel: die Zahl −6.5
+
+1. Vorzeichen: negativ → `S = 1`
+2. Binär: `6.5 = 110.1`
+3. Normalisieren: `1.101 × 2²`
+4. Exponent: `2 + 127 = 129 = 1000'0001`
+5. Mantisse: `10100000000000000000000`
+
+**Resultat:** `1 | 10000001 | 10100000000000000000000`
+
+#### Warum funktioniert das?
+
+- `1 ÷ 3` → wird als `0.3333...` in der Mantisse gespeichert (nicht abgehackt)
+- `× 3` → ergibt korrekt `≈ 1.0`
+- **Nachteil:** Kleine Rundungsfehler möglich, aber viel besser als Ganzzahlen
+
+
+## Aufgabe 16
+
+### Datenspeicherung
+
+**10-Bit-Register** für Parkslot-Status (1 Bit pro Slot):
+
+| Bit | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 |
+|-----|----|---|---|---|---|---|---|---|---|---|
+| Wert | 0 | 1 | 0 | 0 | 1 | 0 | 1 | 0 | 1 | 0 |
+
+`0` = frei (Lampe blinkt), `1` = belegt (Lampe aus)
+
+### Ablauf: Fahrzeug einlagern
+
+1. Kunde fährt auf Laderampe
+2. Terminal zeigt freie Slots (blinkende Lampen)
+3. Kunde drückt Zahl (z.B. `7`) → BCD-Kodierung → Steuerlogik
+4. Steuerlogik prüft: Bit 7 == 0? (frei?)
+   - **JA** → Lift fährt zu Slot 7, Fahrzeug einlagern, Bit 7 = 1
+   - **NEIN** → Fehlersignal, andere Wahl verlangen
+
+### Ablauf: Fahrzeug auslagern
+
+1. Kunde drückt Slot-Nummer (z.B. `7`)
+2. Steuerlogik prüft: Bit 7 == 1? (belegt?)
+   - **JA** → Lift holt Fahrzeug, deponiert es an Ausgabestelle, Bit 7 = 0
+   - **NEIN** → Fehlersignal (Slot leer)
+
+### BCD-Eingabe (vom Bild)
+
+- Kunde tippt `1`–`9` oder `10` am Terminal
+- BCD kodiert die Zahl in 4-Bit-Gruppen: z.B. `7` → `0111`
+- Steuerlogik dekodiert BCD → Slot-Nummer → Bit im Register ansprechen
+
+### Sicherheit
+
+- Doppelbelegung verhindert: Slot nur wählbar wenn Bit = 0
+- Notaus: Alle Bewegungen stoppen, aktueller Zustand im Register erhalten

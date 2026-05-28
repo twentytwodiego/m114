@@ -1,0 +1,140 @@
+
+<h2 class="sr-only">M114 A3 – QR-Code Generator</h2>
+<style>
+.tab-btn{padding:8px 18px;font-size:14px;border-radius:var(--border-radius-md);cursor:pointer;background:transparent;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);}
+.tab-btn.active{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+label{font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:4px;margin-top:12px;}
+input,select{width:100%;box-sizing:border-box;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.info-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;font-size:13px;color:var(--color-text-secondary);line-height:1.8;margin-top:1rem;}
+.warn{background:var(--color-background-warning);color:var(--color-text-warning);border-radius:var(--border-radius-md);padding:0.75rem 1rem;font-size:13px;margin-top:1rem;}
+.ticket-preview{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;font-size:13px;line-height:2;}
+</style>
+
+<div style="padding:1rem 0;">
+<div style="display:flex;gap:8px;margin-bottom:1.5rem;">
+  <button class="tab-btn active" onclick="switchTab('t1',this)">Aufgabe 1 – Einfacher QR-Code</button>
+  <button class="tab-btn" onclick="switchTab('t2',this)">Aufgabe 2 – Stadion-Ticket</button>
+</div>
+
+<div id="t1" class="tab-content active">
+  <label>Deine Botschaft oder URL</label>
+  <div style="display:flex;gap:8px;">
+    <input type="text" id="a1-input" value="Hallo Banknachbar! M114 TBZ" style="flex:1;font-size:15px;" />
+    <button onclick="genA1()">Generieren</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.25rem;align-items:start;">
+    <div style="text-align:center;">
+      <img id="a1-img" style="border:1px solid #ccc;border-radius:8px;max-width:200px;" />
+      <p id="a1-label" style="font-size:12px;color:var(--color-text-secondary);margin:0.5rem 0 0;word-break:break-all;"></p>
+    </div>
+    <div>
+      <div class="info-box" id="a1-info"></div>
+      <div class="warn">Screenshot machen und mit dem Banknachbar tauschen. Mit Smartphone-Kamera scannen.</div>
+    </div>
+  </div>
+</div>
+
+<div id="t2" class="tab-content">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+    <div>
+      <p style="font-size:13px;font-weight:500;color:var(--color-text-primary);margin:0 0 4px;">Ticket-Daten</p>
+      <div class="field-row">
+        <div><label>Datum</label><input type="date" id="f-date" value="2026-06-14" /></div>
+        <div><label>Uhrzeit</label><input type="time" id="f-time" value="18:00" /></div>
+      </div>
+      <label>Ticketnummer (alphanumerisch)</label>
+      <input type="text" id="f-tnum" value="TK-000042-A" />
+      <div class="field-row">
+        <div><label>Sitzplatznummer</label><input type="number" id="f-seat" value="1337" /></div>
+        <div><label>Sektor (A–Z)</label>
+          <select id="f-sector">
+            <option>A</option><option>B</option><option>C</option><option selected>D</option>
+            <option>E</option><option>F</option><option>G</option><option>H</option>
+          </select>
+        </div>
+      </div>
+      <label>ID- / Passnummer</label>
+      <input type="text" id="f-id" value="CHE-123456789" />
+      <button onclick="genTicket()" style="margin-top:16px;width:100%;">Ticket-QR generieren</button>
+    </div>
+    <div>
+      <p style="font-size:13px;font-weight:500;color:var(--color-text-primary);margin:0 0 0.75rem;">QR-Code</p>
+      <div class="ticket-preview" id="ticket-preview"></div>
+      <div style="text-align:center;margin-top:1rem;">
+        <img id="a2-img" style="border:1px solid #ccc;border-radius:8px;max-width:200px;" />
+        <p id="a2-info" style="font-size:12px;color:var(--color-text-secondary);margin:0.5rem 0 0;word-break:break-all;"></p>
+      </div>
+    </div>
+  </div>
+  <div class="info-box" style="margin-top:1.5rem;">
+    <b style="color:var(--color-text-primary);">Fälschungsschutz:</b><br>
+    ✅ ID/Passnummer = nicht übertragbar<br>
+    ✅ Fortlaufende Ticketnummer = kein Duplikat<br>
+    ✅ CRC32-Prüfsumme = erkennt Verfälschungen<br>
+    ⚠️ Für echten Einsatz: digitale Signatur (HMAC) nötig
+  </div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<script>
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function genA1(){
+  const text=document.getElementById('a1-input').value.trim()||'M114 TBZ';
+  QRCode.toDataURL(text,{width:200,margin:2,errorCorrectionLevel:'M'},function(err,url){
+    if(!err){
+      document.getElementById('a1-img').src=url;
+      document.getElementById('a1-label').textContent='"'+text+'"';
+      document.getElementById('a1-info').innerHTML='Zeichen: <b>'+text.length+'</b><br>Bytes: <b>'+new TextEncoder().encode(text).length+'</b><br>Fehlerkorrektur: <b>M (15%)</b>';
+    }
+  });
+}
+
+function crc32(str){
+  let crc=0xFFFFFFFF;
+  for(let i=0;i<str.length;i++){
+    crc^=str.charCodeAt(i);
+    for(let j=0;j<8;j++)crc=(crc>>>1)^(crc&1?0xEDB88320:0);
+  }
+  return((crc^0xFFFFFFFF)>>>0).toString(16).toUpperCase().padStart(8,'0');
+}
+
+function genTicket(){
+  const date=document.getElementById('f-date').value;
+  const time=document.getElementById('f-time').value;
+  const tnum=document.getElementById('f-tnum').value;
+  const seat=document.getElementById('f-seat').value;
+  const sector=document.getElementById('f-sector').value;
+  const pid=document.getElementById('f-id').value;
+  const payload='DT:'+date+'T'+time+'|TN:'+tnum+'|ST:'+seat+'|SC:'+sector+'|ID:'+pid;
+  const cs=crc32(payload);
+  const full=payload+'|CS:'+cs;
+
+  document.getElementById('ticket-preview').innerHTML=
+    '<b>Datum/Zeit:</b> '+date+' '+time+' Uhr<br>'+
+    '<b>Ticketnr.:</b> '+tnum+'<br>'+
+    '<b>Sitzplatz:</b> '+seat+'<br>'+
+    '<b>Sektor:</b> '+sector+'<br>'+
+    '<b>ID/Pass:</b> '+pid+'<br>'+
+    '<span style="color:var(--color-text-secondary)">CRC32: <code>'+cs+'</code></span>';
+
+  QRCode.toDataURL(full,{width:200,margin:2,errorCorrectionLevel:'H'},function(err,url){
+    if(!err){
+      document.getElementById('a2-img').src=url;
+      document.getElementById('a2-info').textContent='Payload: '+full.length+' Zeichen | CRC32: '+cs;
+    }
+  });
+}
+
+genA1();
+genTicket();
+</script>
